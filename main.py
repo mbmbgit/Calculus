@@ -1,129 +1,83 @@
 import sympy as sp
-import numpy as np
-import matplotlib.pyplot as plt
 
-def show_basic_calculus():
-    """1. 微分積分の基本とグラフ化（山の頂点と面積）"""
-    print("\n=== 1. 微分積分の基本可視化 ===")
-    x = sp.Symbol('x')
-    f = x**2
+def run_calculus_freelance_calculator():
+    print("="*55)
+    print(" フリーランス収益シミュレーター (実績直接入力・微分積分版)")
+    print("="*55)
 
-    df = sp.diff(f, x)
-    area = sp.integrate(f, (x, 0, 2))
-    
-    print(f"関数: f(x) = {f}")
-    print(f"微分: f'(x) = {df} (傾き)")
-    print(f"x=0から2までの積分(面積): {area:.2f}")
+    # 1. 現状のヒアリング（より直感的な入力へ変更）
+    try:
+        current_price = int(input("過去1年間の「平均受注単価」を入力してください (例: 61405): "))
+        
+        # 改善点: 年間の件数を直接入力
+        yearly_orders = int(input("過去1年間の「総受注件数」を入力してください (例: 14): "))
+        current_orders_per_month = yearly_orders / 12  # プログラム内で月平均に変換
+        
+        monthly_expense = int(input("毎月の「経費・生活費」を入力してください (例: 150000): "))
+        commission_rate = float(input("手数料率を小数で入力してください (10%なら 0.1): "))
+        target_amount = int(input("10年後の「目標手取り額(純利益)」を入力してください (例: 400000000): "))
+    except ValueError:
+        print("エラー: 数値で入力してください。")
+        return
 
-    x_vals = np.linspace(-1, 3, 100)
-    y_vals = x_vals**2
+    # 現状の月間利益
+    current_revenue = current_price * current_orders_per_month
+    current_profit = (current_revenue * (1 - commission_rate)) - monthly_expense
 
-    plt.figure(figsize=(8, 5))
-    plt.plot(x_vals, y_vals, label="f(x) = x^2", color='blue')
-    plt.fill_between(x_vals, y_vals, where=(x_vals>=0)&(x_vals<=2), color='orange', alpha=0.3, label="Integral Area (0 to 2)")
-    plt.scatter([0], [0], color='red', label="Minimum (Derivative=0)")
-    
-    plt.title("Basic Calculus: Differentiation and Integration")
-    plt.xlabel("x")
-    plt.ylabel("f(x)")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # --- 微分積分による成長曲線の計算 ---
+    x = sp.Symbol('x') # 経過月数
+    a = sp.Symbol('a') # 毎月の利益成長スピード（傾き）
 
-def calc_optimal_price(cost=10):
-    """2. 利益最大化の最適価格シミュレーション"""
-    print(f"\n=== 2. 最適価格の算出 (原価 {cost}円の場合) ===")
-    p = sp.Symbol('p')
-    q = 100 - 2*p  # 需要関数
-    revenue = p * q
-    total_cost = cost * q
-    profit = revenue - total_cost
+    # 利益関数: 現在の利益 + a * x
+    profit_func = current_profit + a * x
 
-    d_profit = sp.diff(profit, p)
-    best_price = sp.solve(d_profit, p)[0]
-    max_profit = profit.subs(p, best_price)
-
-    print(f"利益関数: {sp.simplify(profit)}")
-    print(f"利益の微分 (限界利益): {d_profit}")
-    print(f"-> 利益が最大になる最適価格: {best_price} 円")
-    print(f"-> その時の予想利益: {max_profit} 円")
-
-def analyze_freelance_goals():
-    """3. フリーランスの10年目標（4億円）ギャップ分析"""
-    print("\n=== 3. 目標達成（10年で4億）へのロードマップ ===")
-    current_price = 61405
-    current_orders_per_year = 14
-    current_yearly_revenue = current_price * current_orders_per_year
-    target_total = 400_000_000
-    
-    commission = 0.10
-    yearly_expense = 150_000 * 12
-
-    x, a = sp.symbols('x a')
-    
-    # 現状維持の10年積分
-    current_total_profit = (current_yearly_revenue * (1 - commission) - yearly_expense) * 10
-    
-    # 目標達成に必要な成長曲線 (f(x) = a*x^2 + 現在の売上)
-    yearly_rev_func = a * x**2 + current_yearly_revenue
-    total_profit_func = sp.integrate((yearly_rev_func * (1 - commission)) - yearly_expense, (x, 0, 10))
-    required_a = sp.solve(total_profit_func - target_total, a)[0]
-
-    print(f"[現状] 現在の年商: {current_yearly_revenue/10000:.1f} 万円")
-    print(f"[現状] 現状維持での10年総利益: {current_total_profit/10000:.1f} 万円")
-    print("\n[目標] 4億円達成に必要な『月商目標』の推移（加速モデル）:")
-    for year in [1, 3, 5, 10]:
-        rev = float(required_a) * year**2 + current_yearly_revenue
-        print(f" {year:>2}年目: 月商 {rev/12/10000:>6.1f} 万円")
-
-def compare_business_models():
-    """4. 働き方の積分比較（単発 vs ストック型）"""
-    print("\n=== 4. 働き方の積分比較 (10年=120ヶ月) ===")
-    x = sp.Symbol('x')
+    # 積分: 10年間(120ヶ月)の総利益
     months = 120
+    total_profit_expr = sp.integrate(profit_func, (x, 0, months))
 
-    # パターンA：単発 (月約6.6万円)
-    monthly_rev_A = 66000
-    total_A = sp.integrate(monthly_rev_A, (x, 0, months))
+    # 目標金額になるような a (成長スピード) を解く
+    required_a = sp.solve(total_profit_expr - target_amount, a)[0]
+    
+    # 微分: 利益関数の変化率（毎月の成長必須額）
+    final_profit_func = current_profit + required_a * x
+    derivative_func = sp.diff(final_profit_func, x)
 
-    # パターンB：毎月5000円分ずつ継続契約が増えていくモデル
-    monthly_rev_B = 66000 + 5000 * x
-    total_B = sp.integrate(monthly_rev_B, (x, 0, months))
+    # --- 結果の出力 ---
+    print("\n" + "="*55)
+    print(" 【解析結果：10年で4億円達成へのロードマップ】")
+    print("="*55)
+    
+    print(f"[現状分析]")
+    print(f"・現在の月間平均受注件数: 約 {current_orders_per_month:.2f} 件 (年間{yearly_orders}件換算)")
+    print(f"・現在の平均月商: 約 {int(current_revenue):,} 円")
+    
+    if current_profit <= 0:
+         print(f"・現在の月間純利益: 約 {int(current_profit):,} 円 ⚠️現在赤字ペースです")
+    else:
+         print(f"・現在の月間純利益: 約 {int(current_profit):,} 円")
 
-    print(f"パターンA (単発案件のみ) : 10年総売上 約 {total_A/10000:.0f} 万円")
-    print(f"パターンB (継続案件蓄積) : 10年総売上 約 {total_B/10000:.0f} 万円")
-    print("-> 継続契約（積分の底上げ）を取り入れると、資産の積み上がり方が劇的に変わります。")
-
-def main():
-    """メインメニュー"""
-    while True:
-        print("\n" + "="*40)
-        print(" ビジネス微積シミュレーター メニュー")
-        print("="*40)
-        print("1: 微分積分の基本とグラフ表示")
-        print("2: 最適価格の算出 (利益最大化)")
-        print("3: 目標達成(4億円)へのロードマップ分析")
-        print("4: 単発 vs ストック型ビジネスの総収益比較")
-        print("0: 終了")
-        print("-" * 40)
+    print(f"\n[微分の視点：毎月必要な成長ペース（変化率）]")
+    print(f"・目標達成のためには、毎月の純利益を【 {int(derivative_func):,} 円 】ずつ増やし続ける必要があります。")
+    
+    revenue_increase_per_month = float(derivative_func) / (1 - commission_rate)
+    print(f"・手数料({commission_rate*100:.0f}%)を考慮すると、売上ベースでは毎月【 {int(revenue_increase_per_month):,} 円 】の増加が必要です。")
+    
+    print(f"\n[積分の視点：マイルストーン（受注ペースを変えない場合の目標単価）]")
+    print(f"※現在の月間約 {current_orders_per_month:.2f} 件のペースを維持して単価だけを上げる場合")
+    
+    for month in [1, 12, 36, 60, 120]:
+        target_rev = current_revenue + (revenue_increase_per_month * month)
+        target_unit_price = target_rev / current_orders_per_month
         
-        choice = input("実行したい番号を入力してください: ")
-        
-        if choice == '1':
-            show_basic_calculus()
-        elif choice == '2':
-            cost_input = input("想定する原価(コスト)を数字で入力してください (デフォルト10): ")
-            cost = float(cost_input) if cost_input.strip() else 10
-            calc_optimal_price(cost)
-        elif choice == '3':
-            analyze_freelance_goals()
-        elif choice == '4':
-            compare_business_models()
-        elif choice == '0':
-            print("シミュレーターを終了します。目標達成に向けて頑張ってください！")
-            break
+        # 表示の調整 (1ヶ月後, 1年後...)
+        if month < 12:
+            years_label = f"{month}ヶ月後"
+        elif month % 12 == 0:
+            years_label = f"{month//12}年後"
         else:
-            print("無効な入力です。0〜4の数字を入力してください。")
+            years_label = f"{month//12}年{month%12}ヶ月後"
+            
+        print(f" ・{years_label:<8}: 目標単価 約 {int(target_unit_price):>9,} 円/件 (月商目標: 約 {int(target_rev):,} 円)")
 
 if __name__ == "__main__":
-    main()
+    run_calculus_freelance_calculator()
